@@ -3,6 +3,8 @@ using System.Collections.Generic;
 
 using System.Text;
 using System.Threading;
+using Eliza;
+using System.Configuration;
 
 namespace SkippingRock.SticksBot
 {
@@ -10,12 +12,14 @@ namespace SkippingRock.SticksBot
     {
         static void Main(string[] args)
         {
-            string token = "vS3JHbsnKbGybTFwFjHVo5tzh";
-            string user = "aiSticks";
-            SticksBot bot = new SticksBot(user,token);
+            string user = ConfigurationManager.AppSettings["user"];
+            string token = ConfigurationManager.AppSettings["token"];
+            string elizaUrl = ConfigurationManager.AppSettings["elizaUrl"];
+            ElizaApi eliza = new ElizaApi(elizaUrl, user, token);
+            SticksBot bot = new SticksBot(eliza);
             Thread worker = new Thread(bot.DoWork);
             worker.Start();
-            while (!worker.IsAlive) ; // loop till he's there
+            while (!worker.IsAlive) ; // loop till he's not there
             Thread.CurrentThread.Join();
         }
     }

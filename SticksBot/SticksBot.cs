@@ -10,20 +10,13 @@ namespace SkippingRock.SticksBot
 
     class SticksBot
     {
-        private const string elizaUrl = "http://test.weewar.com/api1/";
-
-
-        private string username = null;
-        private string token = null;
         private volatile bool _shouldStop = false;
         private ElizaApi eliza;
 
 
-        public SticksBot(string user, string token)
+        public SticksBot(ElizaApi eliza)
         {
-            this.username = user;
-            this.token = token;
-            eliza = new ElizaApi(elizaUrl, username, token);
+            this.eliza = eliza;
         }
 
         public void DoWork()
@@ -32,7 +25,7 @@ namespace SkippingRock.SticksBot
             {
                 try
                 {
-                    List<Game> games = eliza.headquarterGames();
+                    List<Game> games = eliza.GetGamesFromHeadquarters();
                     foreach (Game game in games)
                     {
                         if (game.RequiresAnInviteAccept)
@@ -47,11 +40,11 @@ namespace SkippingRock.SticksBot
                         }
                         Console.WriteLine();
                         Console.WriteLine("Game: " + game.Name + " (" + game.Id + ")");
-                        Game detailed = eliza.getGameState(game.Id);
+                        Game detailed = eliza.GetGameState(game.Id);
                         Console.WriteLine("  Getting Map info: " + detailed.MapId);
-                        WeewarMap wmap = eliza.getMap(detailed.MapId);
+                        WeewarMap wmap = eliza.GetMap(detailed.MapId);
                         //Console.WriteLine(  "  Getting Map info: "+wmap.Terrains);
-                        Faction f = detailed.getFactionByPlayerName(username);
+                        Faction f = detailed.GetFactionByPlayerName(eliza.User);
                         Console.WriteLine("  .. moving my dudes. ");
                         foreach (Unit unit in f.Units)
                         {
@@ -61,24 +54,24 @@ namespace SkippingRock.SticksBot
                             // repair if quantity below 5
                             if (!unit.Finished && unit.Quantity < 5)
                             {
-                                String m = eliza.repair(detailed.Id, unit.Coordinate);
+                                String m = eliza.Repair(detailed.Id, unit.Coordinate);
                                 Console.WriteLine("     " + ".. repairing => " + m);
                                 unit.Finished = true;
                                 continue;
                             }
 
                             // request movement coordinates
-                            List<Coordinate> possibleMovementCoordinates = eliza.getMovementCoords(game.Id, unit.Coordinate, unit.Type);
+                            List<Coordinate> possibleMovementCoordinates = eliza.GetMovementCoords(game.Id, unit.Coordinate, unit.Type);
                             Util.Shuffle(possibleMovementCoordinates);
                             possibleMovementCoordinates.Insert(0, unit.Coordinate);
 
                             // check if there is a capturable base in range
                             if (!unit.Finished && unit.Type.Contains("Trooper"))
                             {
-                                Coordinate c = matchFreeBase(possibleMovementCoordinates, wmap, detailed, f);
+                                Coordinate c = MatchFreeBase(possibleMovementCoordinates, wmap, detailed, f);
                                 if (c != null)
                                 {
-                                    String m = eliza.moveAttackCapture(detailed.Id, unit.Coordinate, c, null, true);
+                                    String m = eliza.MoveAttackCapture(detailed.Id, unit.Coordinate, c, null, true);
                                     unit.Coordinate = c;
                                     Console.WriteLine("     " + ".. moving to " + c + " and capturing =>" + m);
                                     unit.Finished = true;
@@ -104,7 +97,7 @@ namespace SkippingRock.SticksBot
                                     Console.WriteLine("     " + "..  attack coord :" + a + " ");
                                     if (a != null && detailed.getUnit(c) == null)
                                     {
-                                        String m = eliza.moveAttackCapture(detailed.Id, unit.Coordinate, c, a, false);
+                                        String m = eliza.MoveAttackCapture(detailed.Id, unit.Coordinate, c, a, false);
                                         Console.WriteLine("     " + ".. moving to " + c + " attacking " + a + " =>" + m);
                                         if (c != null)
                                             unit.Coordinate = c;
@@ -144,7 +137,7 @@ namespace SkippingRock.SticksBot
 
                                     if (!c.Equals(unit.Coordinate) && detailed.getUnit(c) == null)
                                     {
-                                        String m = eliza.moveAttackCapture(detailed.Id, unit.Coordinate, c, null, false);
+                                        String m = eliza.MoveAttackCapture(detailed.Id, unit.Coordinate, c, null, false);
                                         Console.WriteLine("     " + ".. moving to " + c + " =>" + m);
                                         unit.Coordinate = c;
                                         cnt = false;
@@ -172,14 +165,14 @@ namespace SkippingRock.SticksBot
                                         List<String> options = buildOptions[terrain.Type];
                                         int nd = dice(options.Count);
                                         String buildType = options[nd - 1];
-                                        String x = eliza.build(detailed.Id, terrain.Coordinate, options[nd - 1]);
+                                        String x = eliza.Build(detailed.Id, terrain.Coordinate, options[nd - 1]);
                                         Console.WriteLine("     .... building " + options[nd - 1] + " " + x);
                                         f.Credits = (f.Credits - buildCost[buildType]);
                                     }
                                 }
                             }
                         }
-                        if (eliza.finishTurn(detailed.Id))
+                        if (eliza.EndTurn(detailed.Id))
                             Console.WriteLine(" .. finished turn.");
                         else
                             Console.WriteLine(" .. failed to finish turn [" + eliza.GetLastResult() + "]");
@@ -300,7 +293,7 @@ namespace SkippingRock.SticksBot
             return targets;
         }
 
-        private Coordinate matchFreeBase(List<Coordinate> coords, WeewarMap wmap, Game g, Faction myFaction)
+        private Coordinate MatchFreeBase(List<Coordinate> coords, WeewarMap wmap, Game g, Faction myFaction)
         {
 
             //Console.WriteLine("Coords:"+coords );
@@ -317,7 +310,7 @@ namespace SkippingRock.SticksBot
 
         private Coordinate getAttackCoodinate(Game game, Unit unit, Coordinate from)
         {
-            List<Coordinate> coords = eliza.getAttackCoords(game.Id, from, unit.Type);
+            List<Coordinate> coords = eliza.GetAttackCoords(game.Id, from, unit.Type);
             if (coords.Count > 0)
             {
                 int n = dice(coords.Count);

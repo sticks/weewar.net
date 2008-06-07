@@ -33,6 +33,7 @@ namespace Eliza
             _token = t;
         }
 
+        public string User { get { return _username; } }
         private XmlDocument GetDocument(string uri, string user, string password, string xml)
         {
             XmlReader reader = XmlReader.Create(new StringReader(DoRequest(uri,user,password,xml)));
@@ -93,12 +94,12 @@ namespace Eliza
             return DoGameAction(id, DeclineInvitation);
         }
 
-        public Game getGameState(int id)
+        public Game GetGameState(int id)
         {
             return parseGame(GetDocument(_urlString + GameUrl + id, _username, _token, "<weewar game=\"" + id + "\"><acceptInvitation/></weewar>").DocumentElement);
         }
 
-        public List<Game> headquarterGames()
+        public List<Game> GetGamesFromHeadquarters()
         {
             XmlDocument doc = GetDocument(_urlString + "headquarters", _username, _token, null);
             List<Game> ret = new List<Game>();
@@ -173,7 +174,7 @@ namespace Eliza
             return wmap;
         }
 
-        public List<Coordinate> getMovementCoords(int id, Coordinate from, String type)
+        public List<Coordinate> GetMovementCoords(int id, Coordinate from, String type)
         {
             String requestXml = "<weewar game='" + id + "'><movementOptions x='" + from.X + "' y='" + from.Y + "' type='" + type + "' /></weewar>";
             XmlDocument doc = GetDocument(_urlString + "eliza", _username, _token, requestXml);
@@ -186,7 +187,7 @@ namespace Eliza
             return coords;
         }
 
-        public String moveAttackCapture(int id, Coordinate from, Coordinate to, Coordinate attack, bool capture)
+        public String MoveAttackCapture(int id, Coordinate from, Coordinate to, Coordinate attack, bool capture)
         {
             String attackString = "";
             if (attack != null)
@@ -202,19 +203,19 @@ namespace Eliza
             return xml;
         }
 
-        public bool finishTurn(int id)
+        public bool EndTurn(int id)
         {
             return DoGameAction(id, FinishTurn);
         }
 
-        public String build(int id, Coordinate c, String type)
+        public String Build(int id, Coordinate c, String type)
         {
             String requestXml = "<weewar game='" + id + "'><build  x='" + c.X + "' y='" + c.Y + "' type='" + type + "' /></weewar>";
             String xml = DoRequest(_urlString + ElizaUrl, _username, _token, requestXml);
             return xml;
         }
 
-        public List<Coordinate> getAttackCoords(int id,
+        public List<Coordinate> GetAttackCoords(int id,
                 Coordinate from, String type)
         {
             String requestXml = "<weewar game='" + id + "'><attackOptions x='" + from.X + "' y='" + from.Y + "' type='" + type + "' /></weewar>";
@@ -229,7 +230,7 @@ namespace Eliza
         }
 
 
-        public WeewarMap getMap(int mapId)
+        public WeewarMap GetMap(int mapId)
         {
             String xml = DoRequest(_urlString + MapUrl + mapId, _username, _token, null);
             XmlReader reader = XmlReader.Create(new StringReader(xml));
@@ -238,7 +239,7 @@ namespace Eliza
             return parseMap(doc.DocumentElement);
         }
 
-        public String repair(int id, Coordinate coordinate)
+        public String Repair(int id, Coordinate coordinate)
         {
             String requestXml = "<weewar game='" + id + "'><unit x='" + coordinate.X + "' y='" + coordinate.Y + "' ><repair/></unit></weewar>";
             String xml = DoRequest(_urlString + ElizaUrl, _username, _token, requestXml);

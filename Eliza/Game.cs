@@ -58,7 +58,7 @@ namespace Eliza
             get { return factions; }
             set { factions = value; }
         }
-        public Faction getFactionByPlayerName(String name)
+        public Faction GetFactionByPlayerName(String name)
         {
             foreach (Faction faction in factions)
             {

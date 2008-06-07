@@ -30,6 +30,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.configuration" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
   </ItemGroup>
@@ -53,7 +54,9 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Properties\" />
+    <None Include="..\SticksBot\App.config">
+      <Link>App.config</Link>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
@@ -64,4 +67,3 @@
   </Target>
   -->
 </Project>
-
