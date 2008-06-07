@@ -141,7 +141,7 @@ namespace Eliza
 				{
 					Unit u = new Unit();
 					u.Coordinate =  new Coordinate( Int32.Parse( unit.GetAttribute("x") ), Int32.Parse( unit.GetAttribute("y") ) ) ;
-					u.Type =  unit.GetAttribute("type") ;
+					u.Type =  Unit.ToType(unit.GetAttribute("type")) ;
 					u.Finished =  "true" == unit.GetAttribute("finished") ;
 					u.Quantity =   Int32.Parse( unit.GetAttribute("quantity") ) ;
 					f.Units.Add( u );

@@ -8,194 +8,167 @@ using Eliza;
 namespace SkippingRock.SticksBot
 {
 
-    class SticksBot
+    class SticksBot : Bot
     {
-        private volatile bool _shouldStop = false;
-        private ElizaApi eliza;
-
+        protected override void AcceptInvite(Game game)
+        {
+            Console.WriteLine("  .. accepting invitation");
+            base.AcceptInvite(game);
+        }
+        protected override bool IdleGame(Game game)
+        {
+            Console.Write(".");
+            return base.IdleGame(game);
+        }
 
         public SticksBot(ElizaApi eliza)
+            : base(eliza)
         {
-            this.eliza = eliza;
         }
 
-        public void DoWork()
+        protected override void ProcessGame(Game detailed)
         {
-            while (!_shouldStop)
+
+            Console.WriteLine();
+            Console.WriteLine("Game: " + detailed.Name + " (" + detailed.Id + ")");
+            Console.WriteLine("  Getting Map info: " + detailed.MapId);
+            WeewarMap wmap = eliza.GetMap(detailed.MapId);
+            //Console.WriteLine(  "  Getting Map info: "+wmap.Terrains);
+            Faction f = detailed.GetFactionByPlayerName(eliza.User);
+            Console.WriteLine("  .. moving my dudes. ");
+            foreach (Unit unit in f.Units)
             {
-                try
+                Console.WriteLine("-----------------------------------------------------------------------------");
+                Console.WriteLine("     " + unit.Type + "(" + unit.Quantity + ") on " + unit.Coordinate);
+
+                // repair if quantity below 5
+                if (!unit.Finished && unit.Quantity < 5)
                 {
-                    List<Game> games = eliza.GetGamesFromHeadquarters();
-                    foreach (Game game in games)
-                    {
-                        if (game.RequiresAnInviteAccept)
-                        {
-                            Console.WriteLine("  .. accepting invitation");
-                            eliza.AcceptInvite(game.Id);
-                        }
-                        else if (!game.IsInNeedOfAttention)
-                        {
-                            Console.Write(".");
-                            continue;
-                        }
-                        Console.WriteLine();
-                        Console.WriteLine("Game: " + game.Name + " (" + game.Id + ")");
-                        Game detailed = eliza.GetGameState(game.Id);
-                        Console.WriteLine("  Getting Map info: " + detailed.MapId);
-                        WeewarMap wmap = eliza.GetMap(detailed.MapId);
-                        //Console.WriteLine(  "  Getting Map info: "+wmap.Terrains);
-                        Faction f = detailed.GetFactionByPlayerName(eliza.User);
-                        Console.WriteLine("  .. moving my dudes. ");
-                        foreach (Unit unit in f.Units)
-                        {
-                            Console.WriteLine("-----------------------------------------------------------------------------");
-                            Console.WriteLine("     " + unit.Type + "(" + unit.Quantity + ") on " + unit.Coordinate);
-
-                            // repair if quantity below 5
-                            if (!unit.Finished && unit.Quantity < 5)
-                            {
-                                String m = eliza.Repair(detailed.Id, unit.Coordinate);
-                                Console.WriteLine("     " + ".. repairing => " + m);
-                                unit.Finished = true;
-                                continue;
-                            }
-
-                            // request movement coordinates
-                            List<Coordinate> possibleMovementCoordinates = eliza.GetMovementCoords(game.Id, unit.Coordinate, unit.Type);
-                            Util.Shuffle(possibleMovementCoordinates);
-                            possibleMovementCoordinates.Insert(0, unit.Coordinate);
-
-                            // check if there is a capturable base in range
-                            if (!unit.Finished && unit.Type.Contains("Trooper"))
-                            {
-                                Coordinate c = MatchFreeBase(possibleMovementCoordinates, wmap, detailed, f);
-                                if (c != null)
-                                {
-                                    String m = eliza.MoveAttackCapture(detailed.Id, unit.Coordinate, c, null, true);
-                                    unit.Coordinate = c;
-                                    Console.WriteLine("     " + ".. moving to " + c + " and capturing =>" + m);
-                                    unit.Finished = true;
-                                }
-                            }
-                            List<Coordinate> targets = getTargets(detailed, wmap, f);
-                            int minDistance = MinDistance(unit.Coordinate, targets);
-
-                            int n = 5;
-
-                            if (minDistance <= 5 && !unit.Finished)
-                            {
-
-                                // Different moving spots that will be evaluated
-
-
-                                // check for possible attack targets from one of the targets
-                                for (int i = 0; i < n && i < possibleMovementCoordinates.Count; i++)
-                                {
-                                    Coordinate c = possibleMovementCoordinates[i];
-                                    Console.WriteLine("     " + ".. checking movement Option :" + c + " ");
-                                    Coordinate a = getAttackCoodinate(detailed, unit, c);
-                                    Console.WriteLine("     " + "..  attack coord :" + a + " ");
-                                    if (a != null && detailed.getUnit(c) == null)
-                                    {
-                                        String m = eliza.MoveAttackCapture(detailed.Id, unit.Coordinate, c, a, false);
-                                        Console.WriteLine("     " + ".. moving to " + c + " attacking " + a + " =>" + m);
-                                        if (c != null)
-                                            unit.Coordinate = c;
-                                        unit.Finished = true;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            if (!unit.Finished && possibleMovementCoordinates.Count > 1)
-                            {
-
-                                List<Coordinate> cities = getEnemyCities(detailed, wmap, f);
-                                Util.Shuffle(targets);
-                                Util.Shuffle(cities);
-                                possibleMovementCoordinates.RemoveAt(0);
-
-                                while (possibleMovementCoordinates.Count > 5) possibleMovementCoordinates.RemoveAt(5);
-                                while (cities.Count > 3) cities.RemoveAt(3);
-                                while (targets.Count > 3) targets.RemoveAt(3);
-
-                                bool cnt = true;
-                                while (cnt)
-                                {
-                                    Console.WriteLine("     " + ".. possible movement options: " + Coordinate.ToString(possibleMovementCoordinates));
-                                    Console.WriteLine("     " + ".. possible Targets: " + Coordinate.ToString(targets));
-                                    Coordinate c;
-
-                                    if (unit.Type.Equals("Trooper"))
-                                        c = getClosest(possibleMovementCoordinates, cities);
-                                    else
-                                    {
-                                        c = getClosest(possibleMovementCoordinates, targets);
-                                        if (c.Equals(unit.Coordinate) && targets.Count == 0 && possibleMovementCoordinates.Count > 1)
-                                            c = possibleMovementCoordinates[1];
-                                    }
-
-                                    if (!c.Equals(unit.Coordinate) && detailed.getUnit(c) == null)
-                                    {
-                                        String m = eliza.MoveAttackCapture(detailed.Id, unit.Coordinate, c, null, false);
-                                        Console.WriteLine("     " + ".. moving to " + c + " =>" + m);
-                                        unit.Coordinate = c;
-                                        cnt = false;
-                                    }
-                                    else
-                                        possibleMovementCoordinates.Remove(c);
-                                    cnt = cnt && possibleMovementCoordinates.Count > 0;
-                                }
-                            }
-
-                            //Thread.sleep( 300 );
-                        }
-
-                        if (f.Units.Count * 3 < (detailed.GetUnitCount() * 2) || f.Units.Count < 15)
-                        {
-                            Console.WriteLine("     Terrains :" + Terrain.ToString(f.Terrains));
-                            if (f.Credits > 75)
-                            {
-                                foreach (Terrain terrain in f.Terrains)
-                                {
-                                    Console.WriteLine("     " + terrain.Type + " on " + terrain.Coordinate + " finished:" + terrain.Finished + " unit: " + (game.getUnit(terrain.Coordinate) != null));
-                                    if (!terrain.Finished && game.getUnit(terrain.Coordinate) == null)
-                                    {
-                                        Console.WriteLine("     " + terrain.Type + " on " + terrain.Coordinate);
-                                        List<String> options = buildOptions[terrain.Type];
-                                        int nd = dice(options.Count);
-                                        String buildType = options[nd - 1];
-                                        String x = eliza.Build(detailed.Id, terrain.Coordinate, options[nd - 1]);
-                                        Console.WriteLine("     .... building " + options[nd - 1] + " " + x);
-                                        f.Credits = (f.Credits - buildCost[buildType]);
-                                    }
-                                }
-                            }
-                        }
-                        if (eliza.EndTurn(detailed.Id))
-                            Console.WriteLine(" .. finished turn.");
-                        else
-                            Console.WriteLine(" .. failed to finish turn [" + eliza.GetLastResult() + "]");
-                    }
-                    Thread.Sleep(1000);
+                    String m = eliza.Repair(detailed.Id, unit.Coordinate);
+                    Console.WriteLine("     " + ".. repairing => " + m);
+                    unit.Finished = true;
+                    continue;
                 }
-                catch (Exception ex)
+
+                // request movement coordinates
+                List<Coordinate> possibleMovementCoordinates = eliza.GetMovementCoords(detailed.Id, unit.Coordinate, unit.Type);
+                Util.Shuffle(possibleMovementCoordinates);
+                possibleMovementCoordinates.Insert(0, unit.Coordinate);
+
+                // check if there is a capturable base in range
+                if (!unit.Finished && unit.Type.Contains("Trooper"))
                 {
-                    // TODO Auto-generated catch block
-                    Console.WriteLine(ex);
+                    Coordinate c = MatchFreeBase(possibleMovementCoordinates, wmap, detailed, f);
+                    if (c != null)
+                    {
+                        String m = eliza.MoveAttackCapture(detailed.Id, unit.Coordinate, c, null, true);
+                        unit.Coordinate = c;
+                        Console.WriteLine("     " + ".. moving to " + c + " and capturing =>" + m);
+                        unit.Finished = true;
+                    }
+                }
+                List<Coordinate> targets = getTargets(detailed, wmap, f);
+                int minDistance = MinDistance(unit.Coordinate, targets);
+
+                int n = 5;
+
+                if (minDistance <= 5 && !unit.Finished)
+                {
+
+                    // Different moving spots that will be evaluated
+
+
+                    // check for possible attack targets from one of the targets
+                    for (int i = 0; i < n && i < possibleMovementCoordinates.Count; i++)
+                    {
+                        Coordinate c = possibleMovementCoordinates[i];
+                        Console.WriteLine("     " + ".. checking movement Option :" + c + " ");
+                        Coordinate a = getAttackCoodinate(detailed, unit, c);
+                        Console.WriteLine("     " + "..  attack coord :" + a + " ");
+                        if (a != null && detailed.getUnit(c) == null)
+                        {
+                            String m = eliza.MoveAttackCapture(detailed.Id, unit.Coordinate, c, a, false);
+                            Console.WriteLine("     " + ".. moving to " + c + " attacking " + a + " =>" + m);
+                            if (c != null)
+                                unit.Coordinate = c;
+                            unit.Finished = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!unit.Finished && possibleMovementCoordinates.Count > 1)
+                {
+
+                    List<Coordinate> cities = getEnemyCities(detailed, wmap, f);
+                    Util.Shuffle(targets);
+                    Util.Shuffle(cities);
+                    possibleMovementCoordinates.RemoveAt(0);
+
+                    while (possibleMovementCoordinates.Count > 5) possibleMovementCoordinates.RemoveAt(5);
+                    while (cities.Count > 3) cities.RemoveAt(3);
+                    while (targets.Count > 3) targets.RemoveAt(3);
+
+                    bool cnt = true;
+                    while (cnt)
+                    {
+                        Console.WriteLine("     " + ".. possible movement options: " + Coordinate.ToString(possibleMovementCoordinates));
+                        Console.WriteLine("     " + ".. possible Targets: " + Coordinate.ToString(targets));
+                        Coordinate c;
+
+                        if (unit.Type == UnitType.Trooper)
+                            c = getClosest(possibleMovementCoordinates, cities);
+                        else
+                        {
+                            c = getClosest(possibleMovementCoordinates, targets);
+                            if (c.Equals(unit.Coordinate) && targets.Count == 0 && possibleMovementCoordinates.Count > 1)
+                                c = possibleMovementCoordinates[1];
+                        }
+
+                        if (!c.Equals(unit.Coordinate) && detailed.getUnit(c) == null)
+                        {
+                            String m = eliza.MoveAttackCapture(detailed.Id, unit.Coordinate, c, null, false);
+                            Console.WriteLine("     " + ".. moving to " + c + " =>" + m);
+                            unit.Coordinate = c;
+                            cnt = false;
+                        }
+                        else
+                            possibleMovementCoordinates.Remove(c);
+                        cnt = cnt && possibleMovementCoordinates.Count > 0;
+                    }
+                }
+
+                //Thread.sleep( 300 );
+            }
+
+            if (f.Units.Count * 3 < (detailed.GetUnitCount() * 2) || f.Units.Count < 15)
+            {
+                Console.WriteLine("     Terrains :" + Terrain.ToString(f.Terrains));
+                if (f.Credits > 75)
+                {
+                    foreach (Terrain terrain in f.Terrains)
+                    {
+                        Console.WriteLine("     " + terrain.Type + " on " + terrain.Coordinate + " finished:" + terrain.Finished + " unit: " + (detailed.getUnit(terrain.Coordinate) != null));
+                        if (!terrain.Finished && detailed.getUnit(terrain.Coordinate) == null)
+                        {
+                            Console.WriteLine("     " + terrain.Type + " on " + terrain.Coordinate);
+                            List<String> options = buildOptions[terrain.Type];
+                            int nd = dice(options.Count);
+                            String buildType = options[nd - 1];
+                            String x = eliza.Build(detailed.Id, terrain.Coordinate, options[nd - 1]);
+                            Console.WriteLine("     .... building " + options[nd - 1] + " " + x);
+                            f.Credits = (f.Credits - Unit.GetCost(buildType));
+                        }
+                    }
                 }
             }
+            if (eliza.EndTurn(detailed.Id))
+                Console.WriteLine(" .. finished turn.");
+            else
+                Console.WriteLine(" .. failed to finish turn [" + eliza.GetLastResult() + "]");
         }
-
-        public void RequestStop()
-        {
-            _shouldStop = true;
-        }
-
-
 
         static Dictionary<string, List<string>> buildOptions = new Dictionary<string, List<string>>();
-        static Dictionary<string, int> buildCost = new Dictionary<string, int>();
 
         private static Random random = new Random();
         /**
@@ -222,13 +195,6 @@ namespace SkippingRock.SticksBot
             bbase.Add("Light Artillery");
             bbase.Add("Heavy Artillery");
             buildOptions.Add("Base", bbase);
-            buildCost.Add("Trooper", 75);
-            buildCost.Add("Heavy Trooper", 150);
-            buildCost.Add("Raider", 200);
-            buildCost.Add("Tank", 300);
-            buildCost.Add("Heavy Tank", 600);
-            buildCost.Add("Light Artillery", 200);
-            buildCost.Add("Heavy Artillery", 600);
         }
 
         private Coordinate getClosest(List<Coordinate> movementOptions, List<Coordinate> targets)
