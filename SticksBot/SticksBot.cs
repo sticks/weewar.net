@@ -56,7 +56,7 @@ namespace SkippingRock.SticksBot
                 possibleMovementCoordinates.Insert(0, unit.Coordinate);
 
                 // check if there is a capturable base in range
-                if (!unit.Finished && unit.Type.Contains("Trooper"))
+                if (!unit.Finished && unit.CanCapture())
                 {
                     Coordinate c = MatchFreeBase(possibleMovementCoordinates, wmap, detailed, f);
                     if (c != null)
@@ -152,11 +152,15 @@ namespace SkippingRock.SticksBot
                         if (!terrain.Finished && detailed.getUnit(terrain.Coordinate) == null)
                         {
                             Console.WriteLine("     " + terrain.Type + " on " + terrain.Coordinate);
-                            List<String> options = buildOptions[terrain.Type];
-                            int nd = dice(options.Count);
-                            String buildType = options[nd - 1];
-                            String x = eliza.Build(detailed.Id, terrain.Coordinate, options[nd - 1]);
-                            Console.WriteLine("     .... building " + options[nd - 1] + " " + x);
+                            List<UnitType> options = buildOptions[terrain.Type];
+                            UnitType buildType;
+                            do
+                            {
+                                int nd = dice(options.Count);
+                                buildType = options[nd - 1];
+                            } while (f.Credits < Unit.GetCost(buildType));
+                                String x = eliza.Build(detailed.Id, terrain.Coordinate, buildType);
+                                Console.WriteLine("     .... building " + buildType + " " + x);
                             f.Credits = (f.Credits - Unit.GetCost(buildType));
                         }
                     }
@@ -168,7 +172,7 @@ namespace SkippingRock.SticksBot
                 Console.WriteLine(" .. failed to finish turn [" + eliza.GetLastResult() + "]");
         }
 
-        static Dictionary<string, List<string>> buildOptions = new Dictionary<string, List<string>>();
+        static Dictionary<string, List<UnitType>> buildOptions = new Dictionary<string, List<UnitType>>();
 
         private static Random random = new Random();
         /**
@@ -182,18 +186,18 @@ namespace SkippingRock.SticksBot
 
         static SticksBot()
         {
-            List<String> bbase = new List<String>();
-            bbase.Add("Trooper");
-            bbase.Add("Trooper");
-            bbase.Add("Trooper");
-            bbase.Add("Heavy Trooper");
-            bbase.Add("Raider");
-            bbase.Add("Raider");
-            bbase.Add("Tank");
-            bbase.Add("Tank");
-            bbase.Add("Heavy Tank");
-            bbase.Add("Light Artillery");
-            bbase.Add("Heavy Artillery");
+            List<UnitType> bbase = new List<UnitType>();
+            bbase.Add(UnitType.Trooper);
+            bbase.Add(UnitType.Trooper);
+            bbase.Add(UnitType.Trooper);
+            bbase.Add(UnitType.HeavyTrooper);
+            bbase.Add(UnitType.Raider);
+            bbase.Add(UnitType.Raider);
+            bbase.Add(UnitType.Tank);
+            bbase.Add(UnitType.Tank);
+            bbase.Add(UnitType.HeavyTank);
+            bbase.Add(UnitType.LightArtillery);
+            bbase.Add(UnitType.HeavyArtillery);
             buildOptions.Add("Base", bbase);
         }
 

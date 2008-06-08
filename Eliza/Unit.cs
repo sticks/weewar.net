@@ -116,5 +116,11 @@ namespace Eliza
         {
             return "{\"type\":\"" + Type + "\",\"finished\":" + Finished + ",\"quantity\":" + quantity + ",\"coordinate\":" + coordinate + "}";
         }
+
+        public bool CanCapture()
+        {
+            return type == UnitType.HeavyTrooper
+                || type == UnitType.Trooper;
+        }
     }
 }
