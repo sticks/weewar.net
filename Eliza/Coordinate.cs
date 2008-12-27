@@ -231,6 +231,9 @@ namespace Eliza
 
         }
 
-
-    }
+        public Coordinate Xform(int xmod, int ymod)
+        {
+          return new Coordinate(x + xmod, y + ymod);
+        }
+      }
 }

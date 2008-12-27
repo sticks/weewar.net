@@ -5,6 +5,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eliza", "Eliza.csproj", "{C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SticksBot", "SticksBot.csproj", "{467F76DC-95DF-49EF-899F-D75382CDA9FF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkippingRock.Core", "..\..\SkippingRock.Core\SkippingRock.Core\SkippingRock.Core.csproj", "{7425B069-A060-4689-BBE4-FCE1F72BF106}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -19,6 +21,10 @@ Global
 		{467F76DC-95DF-49EF-899F-D75382CDA9FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{467F76DC-95DF-49EF-899F-D75382CDA9FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{467F76DC-95DF-49EF-899F-D75382CDA9FF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7425B069-A060-4689-BBE4-FCE1F72BF106}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7425B069-A060-4689-BBE4-FCE1F72BF106}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7425B069-A060-4689-BBE4-FCE1F72BF106}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7425B069-A060-4689-BBE4-FCE1F72BF106}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

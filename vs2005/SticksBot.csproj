@@ -43,9 +43,15 @@
     <Compile Include="..\SticksBot\Properties\AssemblyInfo.cs">
       <Link>AssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="..\SticksBot\FindPath.cs">
+      <Link>FindPath.cs</Link>
+    </Compile>
     <Compile Include="..\SticksBot\SticksBot.cs">
       <Link>SticksBot.cs</Link>
     </Compile>
+    <Compile Include="..\SticksBot\SticksNode.cs" >
+	<Link>SticksNode.cs</Link>
+</Compile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Eliza.csproj">
@@ -56,6 +62,9 @@
   <ItemGroup>
     <None Include="..\SticksBot\App.config">
       <Link>App.config</Link>
+    </None>
+    <None Include="SticksBot.vars">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

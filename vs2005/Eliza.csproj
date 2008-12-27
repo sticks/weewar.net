@@ -34,6 +34,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\Eliza\AStar.cs">
+      <Link>AStar.cs</Link>
+    </Compile>
     <Compile Include="..\Eliza\Bot.cs">
       <Link>Bot.cs</Link>
     </Compile>
@@ -46,6 +49,9 @@
     </Compile>
     <Compile Include="..\Eliza\Game.cs">
       <Link>Game.cs</Link>
+    </Compile>
+    <Compile Include="..\Eliza\Heap.cs">
+      <Link>Heap.cs</Link>
     </Compile>
     <Compile Include="..\Eliza\Properties\AssemblyInfo.cs" />
     <Compile Include="..\Eliza\Terrain.cs">
