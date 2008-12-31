@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<project name="Eliza" default="build" basedir="..">
+	<description>weewar.net eliza library.</description>
+	<property name="debug" value="true" overwrite="false" />
+	<target name="clean" description="remove all generated files">
+		<delete file="SkippingRock.Eliza.dll" failonerror="false" />
+		<delete file="SkippingRock.Eliza.pdb" failonerror="false" />
+	</target>
+	<target name="build" depends="buildEliza, buildSticksBot" />
+	<target name="buildSticksBot" description="compiles the sticksbot source code">
+		<mkdir dir="bin"/>
+		<csc target="exe" output="bin/SticksBot.exe" debug="${debug}">
+			<references basedir="./bin">
+				<include name="SkippingRock.Eliza.dll"/>
+				<include name="System.Configuration.dll"/>
+			</references>
+			<sources basedir="./SticksBot">
+				<include name="**/*.cs"/>
+			</sources>
+		</csc>
+		<copy file="SticksBot/App.config" tofile="bin/SkippingRock.SticksBot.exe.config"/>
+		<copy file="SticksBot/SticksBot.vars" todir="bin"/>
+	</target>
+	<target name="buildEliza" description="compiles the eliza source code">
+		<mkdir dir="bin"/>
+		<csc target="library" output="bin/SkippingRock.Eliza.dll" debug="${debug}">
+			<sources basedir="./Eliza">
+				<include name="**/*.cs"/>
+			</sources>
+		</csc>
+	</target>
+</project>
